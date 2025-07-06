@@ -34,23 +34,29 @@ def format_poem(text):
     lines = [line.strip() for line in lines if len(line.strip()) >= 4]
     return "\n".join(lines[:8])  # 最多显示8行
 
-def generate_poem(model, start_text, length, temperature, top_k, top_p, device, char2idx, idx2char):
+def generate_poem(model, start_text, min_length, temperature, top_k, top_p, device, char2idx, idx2char):
     model.eval()
     input_ids = [char2idx.get(ch, 0) for ch in start_text]
-    input_seq = torch.tensor([input_ids], dtype=torch.long).to(device)
     hidden = None
     result = start_text
 
+    end_tokens = {"。", "！", "？"}
     with torch.no_grad():
-        for _ in range(length):
+        while True:
+            input_seq = torch.tensor([input_ids], dtype=torch.long).to(device)
             output, hidden = model(input_seq, hidden)
             logits = output[:, -1, :]
             next_id = sample_from_logits(logits.squeeze(0), temperature, top_k, top_p)
             next_char = idx2char[next_id]
             result += next_char
-            input_seq = torch.tensor([[next_id]], dtype=torch.long).to(device)
+            input_ids.append(next_id)
+
+            # 当生成长度达到最小长度后，遇到句号等才结束
+            if len(result) >= min_length and next_char in end_tokens:
+                break
 
     return result
+
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -74,7 +80,7 @@ if __name__ == "__main__":
     raw_text = generate_poem(
         model=model,
         start_text=start_text,
-        length=96,
+        min_length=96,
         temperature=temperature,
         top_k=top_k,
         top_p=top_p,
