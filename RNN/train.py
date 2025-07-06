@@ -16,8 +16,8 @@ batch_size = 128
 num_epochs = 50
 learning_rate = 0.001
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-version = "50"
-checkpoint_path = "checkpoints/charlstm_epoch"+version+".pt"  # 用于继续训练的模型路径
+origin_version = "60"
+checkpoint_path = "checkpoints/charlstm_epoch" + origin_version + ".pt"  # 用于继续训练的模型路径
 
 # 加载数据
 dataset = CharDataset("resources/poems.txt", seq_len=seq_len)
@@ -41,7 +41,7 @@ new_epoch = 0
 # 如有之前训练的模型可加载
 if os.path.exists(checkpoint_path):
     print(f"加载已有模型参数：{checkpoint_path}")
-    new_epoch = int(version)
+    new_epoch = int(origin_version)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
 
 # 用于绘图
@@ -69,7 +69,7 @@ for epoch in range(new_epoch, num_epochs + new_epoch):
     print(f"Epoch {epoch+1}/{num_epochs + new_epoch}, Loss: {avg_loss:.4f}, PPL: {ppl:.2f}")
 
     # 保存模型
-    if (epoch+1) % 10 == 0:
+    if (epoch+1) % 5 == 0:
         torch.save(model.state_dict(), f"checkpoints/charlstm_epoch{epoch+1}.pt")
 
 print("训练完成！")
@@ -91,5 +91,5 @@ plt.ylabel("Perplexity")
 plt.legend()
 
 plt.tight_layout()
-plt.savefig("training_curves.png")  # 保存图片
+plt.savefig("training_curves" + origin_version + ".png")  # 保存图片
 plt.show()

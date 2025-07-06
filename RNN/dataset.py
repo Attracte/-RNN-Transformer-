@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 
+
 class CharDataset(Dataset):
     def __init__(self, text_path, seq_len=64):
         with open(text_path, 'r', encoding='utf-8') as f:
@@ -22,6 +23,6 @@ class CharDataset(Dataset):
         return len(self.data) - self.seq_len
 
     def __getitem__(self, idx):
-        x = self.data[idx : idx + self.seq_len]
-        y = self.data[idx + 1 : idx + self.seq_len + 1]
+        x = self.data[idx: idx + self.seq_len]
+        y = self.data[idx + 1: idx + self.seq_len + 1]
         return torch.tensor(x), torch.tensor(y)

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class CharLSTM(nn.Module):
     def __init__(self, vocab_size, embed_size=128, hidden_size=256, num_layers=2):
         super(CharLSTM, self).__init__()
