@@ -1,11 +1,11 @@
 import os
-import torch
-import torch.nn as nn
+import pickle
+
 import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
+import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
-import pickle
+from torch.utils.data import DataLoader
 
 from dataset import CharDataset
 from model import CharLSTM
@@ -13,10 +13,10 @@ from model import CharLSTM
 # 参数设置
 seq_len = 64
 batch_size = 128
-num_epochs = 50
+num_epochs = 15
 learning_rate = 0.001
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-origin_version = "60"
+origin_version = "85"
 checkpoint_path = "checkpoints/charlstm_epoch" + origin_version + ".pt"  # 用于继续训练的模型路径
 
 # 加载数据
@@ -91,5 +91,5 @@ plt.ylabel("Perplexity")
 plt.legend()
 
 plt.tight_layout()
-plt.savefig("training_curves" + origin_version + ".png")  # 保存图片
+plt.savefig("resources/training_curves" + origin_version + ".png")  # 保存图片
 plt.show()

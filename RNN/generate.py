@@ -1,10 +1,13 @@
-import torch
-import torch.nn.functional as F
-from model import CharLSTM
 import pickle
 import re
 
-model_version = "50"
+import torch
+import torch.nn.functional as F
+
+from model import CharLSTM
+
+model_version = "100"
+
 
 def sample_from_logits(logits, temperature=1.0, top_k=None, top_p=None):
     logits = logits / temperature
