@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class CharLSTM(nn.Module):
-    def __init__(self, vocab_size, hidden_dim=128, num_layers=1):
+    def __init__(self, vocab_size, hidden_dim=256, num_layers=2):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, hidden_dim)
         self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers, batch_first=True)

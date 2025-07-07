@@ -1,5 +1,6 @@
 import os
 import pickle
+from collections import Counter
 
 import matplotlib.pyplot as plt
 import torch
@@ -14,26 +15,39 @@ from model import CharLSTM
 seq_len = 64
 batch_size = 128
 num_epochs = 100
-learning_rate = 0.00001
+learning_rate = 0.001
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-origin_version = "100"
+origin_version = "0"
 checkpoint_path = "checkpoints/cleanModel/charlstm_epoch" + origin_version + ".pt"  # 用于继续训练的模型路径
 pkl_path = "checkpoints/cleanModel/char_vocab.pkl"  # 用于保存词表的路径
 
-# 加载数据
-dataset = CharDataset("resources/poems.txt", seq_len=seq_len)
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-pad_id = dataset.char2idx['<PAD>']
-criterion = CrossEntropyLoss(ignore_index=pad_id)
+# 加载原始文本，统计字符频率并构建词表（过滤低频）
+with open("resources/poems.txt", "r", encoding="utf-8") as f:
+    all_text = f.read()
+
+threshold = 10  # 低频字符阈值
+char_counts = Counter(all_text)
+char2idx = {"<PAD>": 0, "<UNK>": 1}
+idx2char = {0: "<PAD>", 1: "<UNK>"}
+
+for char, count in char_counts.items():
+    if count >= threshold:
+        idx = len(char2idx)
+        char2idx[char] = idx
+        idx2char[idx] = char
 
 # 保存词表
 os.makedirs("checkpoints/cleanModel", exist_ok=True)
 with open(pkl_path, "wb") as f:
-    pickle.dump({
-        "char2idx": dataset.char2idx,
-        "idx2char": dataset.idx2char
-    }, f)
+    pickle.dump({"char2idx": char2idx, "idx2char": idx2char}, f)
 print("词表已保存到" + pkl_path)
+
+# 自定义 Dataset 加载器（需要你在 dataset.py 中修改以接受自定义词表）
+dataset = CharDataset("resources/poems.txt", seq_len=seq_len, char2idx=char2idx)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+pad_id = dataset.char2idx['<PAD>']
+criterion = CrossEntropyLoss(ignore_index=pad_id)
+print("词表大小：" + dataset.vocab_size)
 
 # 初始化模型
 model = CharLSTM(vocab_size=dataset.vocab_size).to(device)
