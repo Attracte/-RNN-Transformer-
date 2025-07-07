@@ -87,7 +87,6 @@
         .input-error {
             border-color: #d32f2f !important;
         }
-
     </style>
 </head>
 <body>
@@ -130,124 +129,164 @@
 </div>
 
 <script>
-        document.getElementById('poemForm').addEventListener('submit', function(e) {
-            let isValid = true;
+    // 页面加载时检查是否需要恢复表单状态
+    document.addEventListener('DOMContentLoaded', function() {
+        // 如果是页面刷新，清除表单状态
+        if (performance.navigation.type === 1) {
+            document.getElementById('poemForm').reset();
+        } else {
+            // 尝试从sessionStorage恢复表单数据
+            restoreFormData();
+        }
+    });
 
-            // 验证诗体
-            const poemType = document.getElementById('poem_type');
-            if (!poemType.value) {
-                showError('poem_type_error', '请选择诗体');
+    // 保存表单数据到sessionStorage
+    function saveFormData() {
+        const formData = {
+            poem_type: document.getElementById('poem_type').value,
+            start_text: document.getElementById('start_text').value,
+            temperature: document.getElementById('temperature').value,
+            top_k: document.getElementById('top_k').value,
+            top_p: document.getElementById('top_p').value
+        };
+        sessionStorage.setItem('poemFormData', JSON.stringify(formData));
+    }
+
+    // 从sessionStorage恢复表单数据
+    function restoreFormData() {
+        const savedData = sessionStorage.getItem('poemFormData');
+        if (savedData) {
+            const formData = JSON.parse(savedData);
+            document.getElementById('poem_type').value = formData.poem_type;
+            document.getElementById('start_text').value = formData.start_text;
+            document.getElementById('temperature').value = formData.temperature;
+            document.getElementById('top_k').value = formData.top_k;
+            document.getElementById('top_p').value = formData.top_p;
+        }
+    }
+
+    // 表单提交时保存数据
+    document.getElementById('poemForm').addEventListener('submit', function(e) {
+        // 先执行验证
+        let isValid = true;
+
+        // 验证诗体
+        const poemType = document.getElementById('poem_type');
+        if (!poemType.value) {
+            showError('poem_type_error', '请选择诗体');
+            isValid = false;
+        } else {
+            hideError('poem_type_error');
+        }
+
+        // 验证起始句
+        const startText = document.getElementById('start_text');
+        if (!startText.value.trim()) {
+            showError('start_text_error', '请输入起始句');
+            isValid = false;
+        } else {
+            hideError('start_text_error');
+        }
+
+        // 验证温度
+        const temperature = document.getElementById('temperature');
+        const tempValue = parseFloat(temperature.value);
+        if (isNaN(tempValue)) {
+            showError('temperature_error', '请输入有效的数字');
+            isValid = false;
+        } else if (tempValue < 0.1 || tempValue > 2.0) {
+            showError('temperature_error', '温度值应在0.1到2.0之间');
+            isValid = false;
+        } else {
+            hideError('temperature_error');
+        }
+
+        // 验证Top-K
+        const topK = document.getElementById('top_k');
+        if (topK.value.trim() !== '') {
+            const topKValue = parseInt(topK.value);
+            if (isNaN(topKValue) || topKValue <= 0) {
+                showError('top_k_error', '请输入正整数');
                 isValid = false;
-            } else {
-                hideError('poem_type_error');
-            }
-
-            // 验证起始句
-            const startText = document.getElementById('start_text');
-            if (!startText.value.trim()) {
-                showError('start_text_error', '请输入起始句');
-                isValid = false;
-            } else {
-                hideError('start_text_error');
-            }
-
-            // 验证温度
-            const temperature = document.getElementById('temperature');
-            const tempValue = parseFloat(temperature.value);
-            if (isNaN(tempValue) {
-                showError('temperature_error', '请输入有效的数字');
-                isValid = false;
-            } else if (tempValue < 0.1 || tempValue > 2.0) {
-                showError('temperature_error', '温度值应在0.1到2.0之间');
-                isValid = false;
-            } else {
-                hideError('temperature_error');
-            }
-
-            // 验证Top-K
-            const topK = document.getElementById('top_k');
-            if (topK.value.trim() !== '') {
-                const topKValue = parseInt(topK.value);
-                if (isNaN(topKValue) || topKValue <= 0) {
-                    showError('top_k_error', '请输入正整数');
-                    isValid = false;
-                } else {
-                    hideError('top_k_error');
-                }
-            }
-
-            // 验证Top-P
-            const topP = document.getElementById('top_p');
-            if (topP.value.trim() !== '') {
-                const topPValue = parseFloat(topP.value);
-                if (isNaN(topPValue)) {
-                    showError('top_p_error', '请输入有效的数字');
-                    isValid = false;
-                } else if (topPValue < 0.1 || topPValue > 1.0) {
-                    showError('top_p_error', 'Top-P值应在0.1到1.0之间');
-                    isValid = false;
-                } else {
-                    hideError('top_p_error');
-                }
-            }
-
-            if (!isValid) {
-                e.preventDefault();
-            }
-        });
-
-        // 实时验证函数
-        document.getElementById('temperature').addEventListener('input', function() {
-            const value = parseFloat(this.value);
-            if (isNaN(value)) {
-                showError('temperature_error', '请输入数字');
-            } else if (value < 0.1 || value > 2.0) {
-                showError('temperature_error', '值应在0.1到2.0之间');
-            } else {
-                hideError('temperature_error');
-            }
-        });
-
-        document.getElementById('top_k').addEventListener('input', function() {
-            if (this.value.trim() !== '') {
-                const value = parseInt(this.value);
-                if (isNaN(value) || value <= 0) {
-                    showError('top_k_error', '请输入正整数');
-                } else {
-                    hideError('top_k_error');
-                }
             } else {
                 hideError('top_k_error');
             }
-        });
+        }
 
-        document.getElementById('top_p').addEventListener('input', function() {
-            if (this.value.trim() !== '') {
-                const value = parseFloat(this.value);
-                if (isNaN(value)) {
-                    showError('top_p_error', '请输入数字');
-                } else if (value < 0.1 || value > 1.0) {
-                    showError('top_p_error', '值应在0.1到1.0之间');
-                } else {
-                    hideError('top_p_error');
-                }
+        // 验证Top-P
+        const topP = document.getElementById('top_p');
+        if (topP.value.trim() !== '') {
+            const topPValue = parseFloat(topP.value);
+            if (isNaN(topPValue)) {
+                showError('top_p_error', '请输入有效的数字');
+                isValid = false;
+            } else if (topPValue < 0.1 || topPValue > 1.0) {
+                showError('top_p_error', 'Top-P值应在0.1到1.0之间');
+                isValid = false;
             } else {
                 hideError('top_p_error');
             }
-        });
-
-        function showError(id, message) {
-            const errorElement = document.getElementById(id);
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-            document.getElementById(id.replace('_error', '')).classList.add('input-error');
         }
 
-        function hideError(id) {
-            document.getElementById(id).style.display = 'none';
-            document.getElementById(id.replace('_error', '')).classList.remove('input-error');
+        if (isValid) {
+            // 验证通过，保存表单数据
+            saveFormData();
+        } else {
+            e.preventDefault();
         }
+    });
 
+    // 实时验证函数
+    document.getElementById('temperature').addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        if (isNaN(value)) {
+            showError('temperature_error', '请输入数字');
+        } else if (value < 0.1 || value > 2.0) {
+            showError('temperature_error', '值应在0.1到2.0之间');
+        } else {
+            hideError('temperature_error');
+        }
+    });
+
+    document.getElementById('top_k').addEventListener('input', function() {
+        if (this.value.trim() !== '') {
+            const value = parseInt(this.value);
+            if (isNaN(value) || value <= 0) {
+                showError('top_k_error', '请输入正整数');
+            } else {
+                hideError('top_k_error');
+            }
+        } else {
+            hideError('top_k_error');
+        }
+    });
+
+    document.getElementById('top_p').addEventListener('input', function() {
+        if (this.value.trim() !== '') {
+            const value = parseFloat(this.value);
+            if (isNaN(value)) {
+                showError('top_p_error', '请输入数字');
+            } else if (value < 0.1 || value > 1.0) {
+                showError('top_p_error', '值应在0.1到1.0之间');
+            } else {
+                hideError('top_p_error');
+            }
+        } else {
+            hideError('top_p_error');
+        }
+    });
+
+    function showError(id, message) {
+        const errorElement = document.getElementById(id);
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        document.getElementById(id.replace('_error', '')).classList.add('input-error');
+    }
+
+    function hideError(id) {
+        document.getElementById(id).style.display = 'none';
+        document.getElementById(id.replace('_error', '')).classList.remove('input-error');
+    }
 </script>
 </body>
 </html>
