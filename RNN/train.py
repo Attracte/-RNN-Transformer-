@@ -1,3 +1,4 @@
+# 训练代码
 import os
 import pickle
 from collections import Counter

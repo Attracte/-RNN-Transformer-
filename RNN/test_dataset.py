@@ -1,5 +1,4 @@
 # 测试数据集的读取是否正确
-
 from torch.utils.data import DataLoader
 
 from dataset import CharDataset

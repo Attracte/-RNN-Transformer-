@@ -1,4 +1,4 @@
-# vocab_fix.py
+# 保存词表
 import pickle
 
 from dataset import CharDataset
