@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>古诗生成器</title>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-image: url("https://cdn.jsdelivr.net/gh/chinese-poem/water-ink/bg2.jpg");
+            background-size: cover;
+            background-attachment: fixed;
+            color: #2c1f15;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: 2px solid #aaa;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #3e2f23;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: left;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #bbb;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            margin-top: 20px;
+            padding: 10px 25px;
+            font-size: 18px;
+            background-color: #766256;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #5a4b41;
+        }
+
+        pre {
+            margin-top: 30px;
+            background-color: #fdfdfd;
+            border-left: 4px solid #bfa;
+            padding: 20px;
+            font-size: 20px;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-family: 'ZCOOL KuaiLe', cursive;
+            color: #3e2f23;
+            text-align: center;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 14px;
+            margin-top: 5px;
+            text-align: left;
+            display: none;
+        }
+
+        .input-error {
+            border-color: #d32f2f !important;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🌸 古诗生成器 🌸</h1>
+    <form method="POST" id="poemForm">
+        <label for="poem_type">请选择诗体：</label>
+        <select name="poem_type" id="poem_type" required>
+            <option value="" disabled selected>-- 请选择 --</option>
+            <option value="1">五言绝句</option>
+            <option value="2">七言绝句</option>
+            <option value="3">五言律诗</option>
+            <option value="4">七言律诗</option>
+        </select>
+        <div id="poem_type_error" class="error-message">请选择诗体</div>
+
+        <label for="start_text">请输入起始句：</label>
+        <input type="text" name="start_text" id="start_text" placeholder="如：白日依山尽" required>
+        <div id="start_text_error" class="error-message">请输入起始句</div>
+
+        <label for="temperature">温度（建议 0.7~1.0）：</label>
+        <input type="text" name="temperature" id="temperature" value="0.9" required>
+        <div id="temperature_error" class="error-message">请输入0.1到2.0之间的数字</div>
+
+        <label for="top_k">Top-K（可留空，建议50-100）：</label>
+        <input type="text" name="top_k" id="top_k" placeholder="如：50">
+        <div id="top_k_error" class="error-message">请输入正整数</div>
+
+        <label for="top_p">Top-P（可留空，建议0.7-0.95）：</label>
+        <input type="text" name="top_p" id="top_p" placeholder="如：0.95">
+        <div id="top_p_error" class="error-message">请输入0.1到1.0之间的数字</div>
+
+        <input type="submit" value="生成古诗">
+    </form>
+
+    {% if result %}
+    <h2>🖌️ 生成结果：</h2>
+    <pre>{{ result }}</pre>
+    {% endif %}
+</div>
+
+<script>
+        document.getElementById('poemForm').addEventListener('submit', function(e) {
+            let isValid = true;
+
+            // 验证诗体
+            const poemType = document.getElementById('poem_type');
+            if (!poemType.value) {
+                showError('poem_type_error', '请选择诗体');
+                isValid = false;
+            } else {
+                hideError('poem_type_error');
+            }
+
+            // 验证起始句
+            const startText = document.getElementById('start_text');
+            if (!startText.value.trim()) {
+                showError('start_text_error', '请输入起始句');
+                isValid = false;
+            } else {
+                hideError('start_text_error');
+            }
+
+            // 验证温度
+            const temperature = document.getElementById('temperature');
+            const tempValue = parseFloat(temperature.value);
+            if (isNaN(tempValue) {
+                showError('temperature_error', '请输入有效的数字');
+                isValid = false;
+            } else if (tempValue < 0.1 || tempValue > 2.0) {
+                showError('temperature_error', '温度值应在0.1到2.0之间');
+                isValid = false;
+            } else {
+                hideError('temperature_error');
+            }
+
+            // 验证Top-K
+            const topK = document.getElementById('top_k');
+            if (topK.value.trim() !== '') {
+                const topKValue = parseInt(topK.value);
+                if (isNaN(topKValue) || topKValue <= 0) {
+                    showError('top_k_error', '请输入正整数');
+                    isValid = false;
+                } else {
+                    hideError('top_k_error');
+                }
+            }
+
+            // 验证Top-P
+            const topP = document.getElementById('top_p');
+            if (topP.value.trim() !== '') {
+                const topPValue = parseFloat(topP.value);
+                if (isNaN(topPValue)) {
+                    showError('top_p_error', '请输入有效的数字');
+                    isValid = false;
+                } else if (topPValue < 0.1 || topPValue > 1.0) {
+                    showError('top_p_error', 'Top-P值应在0.1到1.0之间');
+                    isValid = false;
+                } else {
+                    hideError('top_p_error');
+                }
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
+        // 实时验证函数
+        document.getElementById('temperature').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (isNaN(value)) {
+                showError('temperature_error', '请输入数字');
+            } else if (value < 0.1 || value > 2.0) {
+                showError('temperature_error', '值应在0.1到2.0之间');
+            } else {
+                hideError('temperature_error');
+            }
+        });
+
+        document.getElementById('top_k').addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                const value = parseInt(this.value);
+                if (isNaN(value) || value <= 0) {
+                    showError('top_k_error', '请输入正整数');
+                } else {
+                    hideError('top_k_error');
+                }
+            } else {
+                hideError('top_k_error');
+            }
+        });
+
+        document.getElementById('top_p').addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                const value = parseFloat(this.value);
+                if (isNaN(value)) {
+                    showError('top_p_error', '请输入数字');
+                } else if (value < 0.1 || value > 1.0) {
+                    showError('top_p_error', '值应在0.1到1.0之间');
+                } else {
+                    hideError('top_p_error');
+                }
+            } else {
+                hideError('top_p_error');
+            }
+        });
+
+        function showError(id, message) {
+            const errorElement = document.getElementById(id);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            document.getElementById(id.replace('_error', '')).classList.add('input-error');
+        }
+
+        function hideError(id) {
+            document.getElementById(id).style.display = 'none';
+            document.getElementById(id.replace('_error', '')).classList.remove('input-error');
+        }
+
+</script>
+</body>
+</html>
