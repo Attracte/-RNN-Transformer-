@@ -14,9 +14,9 @@ from model import CharLSTM
 seq_len = 64
 batch_size = 128
 num_epochs = 100
-learning_rate = 0.001
+learning_rate = 0.00001
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-origin_version = "0"
+origin_version = "100"
 checkpoint_path = "checkpoints/cleanModel/charlstm_epoch" + origin_version + ".pt"  # 用于继续训练的模型路径
 pkl_path = "checkpoints/cleanModel/char_vocab.pkl"  # 用于保存词表的路径
 

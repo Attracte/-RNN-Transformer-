@@ -4,7 +4,7 @@ import re
 import torch
 import torch.nn.functional as F
 
-from model import CharLSTM
+from RNN.model import CharLSTM
 
 model_version = "30"
 
