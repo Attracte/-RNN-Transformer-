@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 from RNN.model import CharLSTM
 
-model_version = "30"
+model_version = "100"
 
 def sample_from_logits(logits, temperature=1.0, top_k=None, top_p=None):
     logits = logits / temperature
@@ -32,12 +32,15 @@ def sample_from_logits(logits, temperature=1.0, top_k=None, top_p=None):
 
 
 def generate_fixed_length_poem(model, start_text, total_chars,
-                               temperature, top_k, top_p, device, char2idx, idx2char):
+                               temperature, top_k, top_p, device, char2idx, idx2char,
+                               line_length):
     model.eval()
     input_ids = [char2idx.get(ch, 0) for ch in start_text]
     input_seq = torch.tensor([input_ids], dtype=torch.long).to(device)
     hidden = None
     result = start_text
+    last_valid_id = input_ids[-1] if input_ids else 0  # 记录上一个有效字符的ID
+    current_line_chars = len(start_text)  # 当前联的中文字符计数
 
     with torch.no_grad():
         while count_chinese_chars(result) < total_chars:
@@ -45,15 +48,36 @@ def generate_fixed_length_poem(model, start_text, total_chars,
             logits = output[:, -1, :]
             next_id = sample_from_logits(logits.squeeze(0), temperature, top_k, top_p)
             next_char = idx2char[next_id]
-            # 跳过补齐符号
+
             if next_char == '<PAD>':
+                next_id = last_valid_id
+            next_char = idx2char[next_id]
+
+            # 检查是否是标点（逗号或句号）且当前联字数不足
+            if next_char in {'，', '。'} and current_line_chars < line_length:
+                # 忽略标点，继续用上一个有效字符生成
+                next_id = last_valid_id
+                next_char = idx2char[next_id]
+                input_seq = torch.tensor([[next_id]], dtype=torch.long).to(device)
                 continue
 
-            result += next_char
+            # 如果是中文字符
+            if re.match(r'[\u4e00-\u9fff]', next_char):
+                current_line_chars += 1
+                last_valid_id = next_id
+                result += next_char
+            # 如果是允许的标点
+            elif next_char in {'，', '。'}:
+                # 只有达到字数要求时才添加标点
+                if current_line_chars == line_length:
+                    result += next_char
+                    current_line_chars = 0  # 重置当前联字数
+                else:
+                    continue  # 忽略未达到字数要求的标点
+
             input_seq = torch.tensor([[next_id]], dtype=torch.long).to(device)
 
     return result
-
 
 def count_chinese_chars(text):
     return len(re.findall(r'[\u4e00-\u9fff]', text))
@@ -145,7 +169,8 @@ if __name__ == "__main__":
         top_p=top_p,
         device=device,
         char2idx=char2idx,
-        idx2char=idx2char
+        idx2char=idx2char,
+        line_length=line_length  # 新增参数
     )
 
     # 正则去除所有[xxxx]形式的标签及多余空行

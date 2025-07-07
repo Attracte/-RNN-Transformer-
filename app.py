@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # 加载模型和词表
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_path = "RNN/checkpoints/cleanModel/charlstm_epoch45.pt"
+model_path = "RNN/checkpoints/cleanModel/charlstm_epoch100.pt"
 vocab_path = "RNN/checkpoints/cleanModel/char_vocab.pkl"
 
 with open(vocab_path, "rb") as f:
@@ -56,7 +56,8 @@ def index():
             top_p=top_p,
             device=device,
             char2idx=char2idx,
-            idx2char=idx2char
+            idx2char=idx2char,
+            line_length=line_length
         )
 
         result = format_poem_pair_lines(raw, line_length, line_count)
