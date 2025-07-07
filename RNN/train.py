@@ -13,24 +13,27 @@ from model import CharLSTM
 # 参数设置
 seq_len = 64
 batch_size = 128
-num_epochs = 15
+num_epochs = 100
 learning_rate = 0.001
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-origin_version = "85"
-checkpoint_path = "checkpoints/charlstm_epoch" + origin_version + ".pt"  # 用于继续训练的模型路径
+origin_version = "0"
+checkpoint_path = "checkpoints/cleanModel/charlstm_epoch" + origin_version + ".pt"  # 用于继续训练的模型路径
+pkl_path = "checkpoints/cleanModel/char_vocab.pkl"  # 用于保存词表的路径
 
 # 加载数据
 dataset = CharDataset("resources/poems.txt", seq_len=seq_len)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+pad_id = dataset.char2idx['<PAD>']
+criterion = CrossEntropyLoss(ignore_index=pad_id)
 
 # 保存词表
-os.makedirs("checkpoints", exist_ok=True)
-with open("checkpoints/char_vocab.pkl", "wb") as f:
+os.makedirs("checkpoints/cleanModel", exist_ok=True)
+with open(pkl_path, "wb") as f:
     pickle.dump({
         "char2idx": dataset.char2idx,
         "idx2char": dataset.idx2char
     }, f)
-print("词表已保存到 checkpoints/char_vocab.pkl")
+print("词表已保存到" + pkl_path)
 
 # 初始化模型
 model = CharLSTM(vocab_size=dataset.vocab_size).to(device)
@@ -70,7 +73,7 @@ for epoch in range(new_epoch, num_epochs + new_epoch):
 
     # 保存模型
     if (epoch+1) % 5 == 0:
-        torch.save(model.state_dict(), f"checkpoints/charlstm_epoch{epoch+1}.pt")
+        torch.save(model.state_dict(), f"checkpoints/cleanModel/charlstm_epoch{epoch + 1}.pt")
 
 print("训练完成！")
 
