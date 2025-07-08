@@ -93,6 +93,14 @@
 <div class="container">
     <h1>🌸 古诗生成器 🌸</h1>
     <form method="POST" id="poemForm">
+        <label for="model_type">请选择模型：</label>
+        <select name="model_type" id="model_type" required>
+            <option value="" disabled selected>-- 请选择模型 --</option>
+            <option value="rnn">RNN</option>
+            <option value="transformer">Transformer</option>
+        </select>
+        <div id="model_type_error" class="error-message">请选择模型类型</div>
+
         <label for="poem_type">请选择诗体：</label>
         <select name="poem_type" id="poem_type" required>
             <option value="" disabled selected>-- 请选择 --</option>
@@ -143,6 +151,7 @@
     // 保存表单数据到sessionStorage
     function saveFormData() {
         const formData = {
+            model_type: document.getElementById('model_type').value,
             poem_type: document.getElementById('poem_type').value,
             start_text: document.getElementById('start_text').value,
             temperature: document.getElementById('temperature').value,
@@ -157,6 +166,7 @@
         const savedData = sessionStorage.getItem('poemFormData');
         if (savedData) {
             const formData = JSON.parse(savedData);
+            document.getElementById('model_type').value = formData.model_type;
             document.getElementById('poem_type').value = formData.poem_type;
             document.getElementById('start_text').value = formData.start_text;
             document.getElementById('temperature').value = formData.temperature;
@@ -177,6 +187,15 @@
             isValid = false;
         } else {
             hideError('poem_type_error');
+        }
+
+        // 验证模型类型
+        const modelType = document.getElementById('model_type');
+        if (!modelType.value) {
+            showError('model_type_error', '请选择模型类型');
+            isValid = false;
+        } else {
+            hideError('model_type_error');
         }
 
         // 验证起始句
@@ -287,6 +306,9 @@
         document.getElementById(id).style.display = 'none';
         document.getElementById(id.replace('_error', '')).classList.remove('input-error');
     }
+
+
+
 </script>
 </body>
 </html>
