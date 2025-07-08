@@ -10,8 +10,8 @@ app = Flask(__name__)
 
 # 加载模型和词表
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_path = "RNN/checkpoints/cleanModel/charlstm_epoch100.pt"
-vocab_path = "RNN/checkpoints/cleanModel/char_vocab.pkl"
+model_path = "RNN/checkpoints/charlstm_epoch.pt"
+vocab_path = "RNN/checkpoints/char_vocab.pkl"
 
 with open(vocab_path, "rb") as f:
     vocab = pickle.load(f)
