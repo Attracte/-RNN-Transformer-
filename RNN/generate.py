@@ -41,17 +41,24 @@ def generate_fixed_length_poem(model, start_text, total_chars,
     result = start_text
     last_valid_id = input_ids[-1] if input_ids else 0  # 记录上一个有效字符的ID
     current_line_chars = len(start_text)  # 当前联的中文字符计数
+    last_chars = []  # 用于记录最近生成的中文字符
 
     with torch.no_grad():
         while count_chinese_chars(result) < total_chars:
             output, hidden = model(input_seq, hidden)
             logits = output[:, -1, :]
+            # ==== 新增：避免重复机制 ====
+            if len(last_chars) >= 2:
+                # 惩罚连续重复的字符
+                for char in set(last_chars[-2:]):
+                    if char in char2idx:
+                        idx = char2idx[char]
+                        logits[0, idx] -= 2.0  # 适度惩罚
             next_id = sample_from_logits(logits.squeeze(0), temperature, top_k, top_p)
             next_char = idx2char[next_id]
-
             if next_char == '<PAD>':
                 next_id = last_valid_id
-            next_char = idx2char[next_id]
+                next_char = idx2char[next_id]
 
             # 检查是否是标点（逗号或句号）且当前联字数不足
             if next_char in {'，', '。'} and current_line_chars < line_length:
@@ -66,12 +73,18 @@ def generate_fixed_length_poem(model, start_text, total_chars,
                 current_line_chars += 1
                 last_valid_id = next_id
                 result += next_char
+                # 记录最近字符（最多保留5个）
+                last_chars.append(next_char)
+                if len(last_chars) > 5:
+                    last_chars.pop(0)
+
             # 如果是允许的标点
             elif next_char in {'，', '。'}:
                 # 只有达到字数要求时才添加标点
                 if current_line_chars == line_length:
                     result += next_char
                     current_line_chars = 0  # 重置当前联字数
+                    last_chars = []  # 重置重复记录
                 else:
                     continue  # 忽略未达到字数要求的标点
 
@@ -125,14 +138,14 @@ def format_poem_pair_lines(text, line_length, line_count):
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    with open("checkpoints/cleanModel/char_vocab.pkl", "rb") as f:
+    with open("checkpoints/char_vocab.pkl", "rb") as f:
         vocab_data = pickle.load(f)
     char2idx = vocab_data["char2idx"]
     idx2char = vocab_data["idx2char"]
 
     model = CharLSTM(vocab_size=len(char2idx))
     model.load_state_dict(
-        torch.load(f"checkpoints/cleanModel/charlstm_epoch" + model_version + ".pt", map_location=device))
+        torch.load(f"checkpoints/charlstm_epoch" + model_version + ".pt", map_location=device))
     model.to(device)
 
     poem_type_map = {
